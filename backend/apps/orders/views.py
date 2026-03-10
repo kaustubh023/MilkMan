@@ -83,7 +83,7 @@ class CartViewSet(viewsets.ViewSet):
     def list(self, request):
         cart = self._get_or_create_cart(request.user)
         items = CartItem.objects.filter(cart=cart)
-        data = CartItemReadSerializer(items, many=True).data
+        data = CartItemReadSerializer(items, many=True, context={'request': request}).data
         return Response({"items": data})
 
     @action(detail=False, methods=['post'])

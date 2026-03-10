@@ -1,10 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ProductImage from "./ProductImage";
+import { useCart } from "../context/CartContext";
 
 function ProductCard({ product, onClick }) {
   const navigate = useNavigate();
-  const inStock = product.stock > 0;
+  const { items, addToCart, updateQuantity } = useCart();
+  const inStock = Number(product.stock || 0) > 0;
   const price = Number(product.price || 0);
+  const cartItem = items.find((item) => item.product.id === product.id);
 
   return (
     <div className="group section-card overflow-hidden transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_50px_rgba(34,47,39,0.12)]">
@@ -17,7 +20,7 @@ function ProductCard({ product, onClick }) {
             </div>
             <h3 className="text-xl font-semibold tracking-tight">{product.name}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Fresh dairy supply prepared for regular household delivery plans.
+              Fresh dairy supply prepared for regular household delivery and subscription plans.
             </p>
           </div>
           <div className="rounded-2xl bg-[rgba(31,111,67,0.08)] px-3 py-2 text-right">
@@ -36,13 +39,52 @@ function ProductCard({ product, onClick }) {
               Out of stock
             </span>
           )}
-          <span className="text-slate-500">Daily delivery</span>
+          <span className="text-slate-500">Quick order</span>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <button className="btn-primary flex-1" onClick={() => navigate("/subscriptions")}>
+        {cartItem ? (
+          <div className="flex items-center justify-between rounded-[22px] bg-[rgba(31,111,67,0.08)] p-3">
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-slate-500">In cart</div>
+              <div className="mt-1 text-sm font-semibold text-[var(--brand-deep)]">
+                {cartItem.quantity} item{cartItem.quantity > 1 ? "s" : ""} added
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-white text-lg"
+                onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+              >
+                -
+              </button>
+              <div className="inline-flex min-w-10 justify-center text-sm font-semibold">
+                {cartItem.quantity}
+              </div>
+              <button
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-white text-lg"
+                onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => addToCart(product, 1)}
+            disabled={!inStock}
+          >
+            Add to cart
+          </button>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button className="btn-secondary flex-1" onClick={() => navigate("/subscriptions")}>
             Subscribe
           </button>
+          <Link to="/cart" className="btn-secondary">
+            View cart
+          </Link>
           {onClick ? (
             <button className="btn-secondary" onClick={onClick}>
               Details

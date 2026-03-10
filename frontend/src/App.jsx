@@ -3,17 +3,17 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 
-// Public
 import Home from "./pages/public/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/public/Signup";
 import Products from "./pages/public/Products";
 
-// Customer
+import Cart from "./pages/customer/Cart";
+import Checkout from "./pages/customer/Checkout";
+import Orders from "./pages/customer/Orders";
 import Subscriptions from "./pages/customer/Subscriptions";
 import Profile from "./pages/customer/Profile";
 
-// Admin
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
@@ -26,17 +26,21 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <Routes>
-          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/products" element={<Products />} />
-
-          {/* Customer */}
-          <Route path="/cart" element={<Navigate to="/subscriptions" replace />} />
-          <Route path="/checkout" element={<Navigate to="/subscriptions" replace />} />
-          <Route path="/my-orders" element={<Navigate to="/subscriptions" replace />} />
-          <Route path="/orders" element={<Navigate to="/subscriptions" replace />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/my-orders" element={<Navigate to="/orders" replace />} />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute allowedRole="CUSTOMER">
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/subscriptions"
             element={
@@ -54,7 +58,6 @@ function App() {
             }
           />
 
-          {/* Admin */}
           <Route
             path="/admin/dashboard"
             element={
@@ -71,7 +74,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/admin/orders" element={<Navigate to="/admin/subscriptions" replace />} />
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute allowedRole="ADMIN">
+                <AdminOrders />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/subscriptions"
             element={
@@ -97,8 +107,6 @@ function App() {
             }
           />
           <Route path="/staff" element={<Navigate to="/staff/profile" replace />} />
-
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </CartProvider>

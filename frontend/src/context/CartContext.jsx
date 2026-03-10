@@ -1,114 +1,241 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "./AuthContext";
-import { useNavigate } from "react-router-dom";
 
 const CartContext = createContext(null);
+
+function normalizeProduct(product) {
+  if (!product) return null;
+  if (typeof product === "object") {
+    return {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price || 0),
+      image: product.image ?? null,
+      stock: Number(product.stock || 0),
+    };
+  }
+  return { id: product, name: "", price: 0, image: null, stock: 0 };
+}
+
+function normalizeLocalItems(rawItems) {
+  if (!Array.isArray(rawItems)) return [];
+  return rawItems
+    .map((item) => {
+      const product = normalizeProduct(item.product);
+      const quantity = Number(item.quantity || 0);
+      if (!product?.id || quantity <= 0) return null;
+      return { product, quantity };
+    })
+    .filter(Boolean);
+}
+
+function normalizeServerItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item) => ({
+      product: {
+        id: item.product,
+        name: item.product_name,
+        price: Number(item.price || 0),
+        image: item.image ?? null,
+        stock: Number(item.stock || 0),
+      },
+      quantity: Number(item.quantity || 0),
+    }))
+    .filter((item) => item.product.id && item.quantity > 0);
+}
+
+function mergeItems(localItems, serverItems) {
+  const merged = new Map();
+  [...serverItems, ...localItems].forEach((item) => {
+    const existing = merged.get(item.product.id);
+    if (!existing) {
+      merged.set(item.product.id, item);
+      return;
+    }
+    merged.set(item.product.id, {
+      product: {
+        ...existing.product,
+        ...item.product,
+        name: item.product.name || existing.product.name,
+        image: item.product.image || existing.product.image,
+        price: item.product.price || existing.product.price,
+        stock: item.product.stock || existing.product.stock,
+      },
+      quantity: existing.quantity + item.quantity,
+    });
+  });
+  return Array.from(merged.values());
+}
+
+const readLocalItems = () => {
+  try {
+    const raw = localStorage.getItem("cart_items");
+    if (!raw) return [];
+    return normalizeLocalItems(JSON.parse(raw));
+  } catch {
+    return [];
+  }
+};
 
 export function CartProvider({ children }) {
   const { isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("cart_items");
-      if (raw) setItems(JSON.parse(raw));
-    } catch {
-      setItems([]);
-    }
+    setItems(readLocalItems());
   }, []);
 
   useEffect(() => {
     localStorage.setItem("cart_items", JSON.stringify(items));
   }, [items]);
 
+  useEffect(() => {
+    if (!isAuthenticated || role !== "CUSTOMER") return;
+
+    let ignore = false;
+
+    const syncCart = async () => {
+      setSyncing(true);
+      const localItems = readLocalItems();
+      try {
+        const res = await api.get("cart/");
+        const serverItems = normalizeServerItems(res.data?.items || []);
+        const mergedItems = localItems.length ? mergeItems(localItems, serverItems) : serverItems;
+
+        if (localItems.length) {
+          await api.delete("cart/clear/");
+          await api.post("cart/sync/", {
+            items: mergedItems.map((item) => ({
+              product: item.product.id,
+              quantity: item.quantity,
+            })),
+          });
+        }
+
+        if (!ignore) {
+          setItems(mergedItems);
+        }
+      } catch {
+        if (!ignore) {
+          setItems(localItems);
+        }
+      } finally {
+        if (!ignore) {
+          setSyncing(false);
+        }
+      }
+    };
+
+    syncCart();
+    return () => {
+      ignore = true;
+    };
+  }, [isAuthenticated, role]);
+
   const addToCart = async (product, qty = 1) => {
+    const nextQuantity = Number(qty || 1);
+    if (!product?.id || nextQuantity <= 0) return;
+
     setItems((prev) => {
-      const idx = prev.findIndex((i) => i.product.id === product.id);
-      if (idx >= 0) {
+      const index = prev.findIndex((item) => item.product.id === product.id);
+      if (index >= 0) {
         const updated = [...prev];
-        updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + qty };
+        updated[index] = { ...updated[index], quantity: updated[index].quantity + nextQuantity };
         return updated;
       }
-      return [...prev, { product, quantity: qty }];
+      return [...prev, { product: normalizeProduct(product), quantity: nextQuantity }];
     });
+
     if (isAuthenticated && role === "CUSTOMER") {
       try {
-        await api.post("cart/add/", { product: product.id, quantity: qty });
+        await api.post("cart/add/", { product: product.id, quantity: nextQuantity });
       } catch {}
     }
   };
 
-  const removeFromCart = (productId) => {
-    setItems((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeFromCart = async (productId) => {
+    setItems((prev) => prev.filter((item) => item.product.id !== productId));
+    if (isAuthenticated && role === "CUSTOMER") {
+      try {
+        await api.delete("cart/remove/", { data: { product: productId, quantity: 1 } });
+      } catch {}
+    }
   };
 
-  const updateQuantity = (productId, qty) => {
-    if (qty <= 0) return removeFromCart(productId);
+  const updateQuantity = async (productId, qty) => {
+    const nextQuantity = Number(qty || 0);
+    if (nextQuantity <= 0) {
+      await removeFromCart(productId);
+      return;
+    }
+
     setItems((prev) =>
-      prev.map((i) => (i.product.id === productId ? { ...i, quantity: qty } : i))
+      prev.map((item) => (item.product.id === productId ? { ...item, quantity: nextQuantity } : item))
     );
+
+    if (isAuthenticated && role === "CUSTOMER") {
+      try {
+        await api.patch("cart/update_item/", { product: productId, quantity: nextQuantity });
+      } catch {}
+    }
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = async () => {
+    setItems([]);
+    if (isAuthenticated && role === "CUSTOMER") {
+      try {
+        await api.delete("cart/clear/");
+      } catch {}
+    }
+  };
 
   const checkout = async () => {
+    if (!items.length) return;
+
     if (!isAuthenticated || role !== "CUSTOMER") {
       localStorage.setItem("redirectTo", "/checkout");
       navigate("/login");
       return;
     }
-    let orderItems = items.map((i) => ({ product: i.product.id, quantity: i.quantity }));
-    try {
-      const cartRes = await api.get("cart/");
-      if (cartRes.data?.items?.length) {
-        orderItems = cartRes.data.items.map((i) => ({
-          product: i.product,
-          quantity: i.quantity,
-        }));
-      }
-    } catch {}
+
+    const orderItems = items.map((item) => ({
+      product: item.product.id,
+      quantity: item.quantity,
+    }));
+
     await api.post("orders/", { items: orderItems });
-    try {
-      await api.delete("cart/clear/");
-    } catch {}
-    clearCart();
-    navigate("/my-orders");
+    await clearCart();
+    navigate("/orders");
   };
 
-  useEffect(() => {
-    if (isAuthenticated && role === "CUSTOMER") {
-      const raw = localStorage.getItem("cart_items");
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          const toSync = parsed.map((i) => ({ product: i.product.id, quantity: i.quantity }));
-          api.post("cart/sync/", { items: toSync }).then(() => {
-            localStorage.removeItem("cart_items");
-          });
-        } catch {}
-      }
-    }
-  }, [isAuthenticated, role]);
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = items.reduce((sum, item) => sum + Number(item.product.price || 0) * item.quantity, 0);
 
   const value = useMemo(
     () => ({
       items,
+      cartCount,
+      cartTotal,
+      syncing,
       addToCart,
       removeFromCart,
       updateQuantity,
       clearCart,
       checkout,
     }),
-    [items]
+    [items, cartCount, cartTotal, syncing]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within CartProvider");
-  return ctx;
+  const context = useContext(CartContext);
+  if (!context) throw new Error("useCart must be used within CartProvider");
+  return context;
 }
