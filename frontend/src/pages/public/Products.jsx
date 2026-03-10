@@ -16,16 +16,27 @@ function Products() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="app-shell">
       <Navbar />
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">Products</h1>
+      <main className="app-section pb-16">
+        <div className="section-card mb-8 p-8">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Product catalog</div>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Fresh dairy products for daily delivery plans</h1>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500 md:text-base">
+            This page now reads more like a real catalog. Product cards emphasize freshness, stock, and subscription value without changing any existing backend flow.
+          </p>
+        </div>
+
         {loading ? (
-          <div className="text-center py-20 text-gray-500">Loading products...</div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="section-card h-[380px] animate-pulse bg-white/70" />
+            ))}
+          </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">No products available</div>
+          <div className="section-card p-10 text-center text-slate-500">No products available right now.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
@@ -37,4 +48,3 @@ function Products() {
 }
 
 export default Products;
-

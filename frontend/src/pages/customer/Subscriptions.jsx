@@ -9,6 +9,8 @@ function Subscriptions() {
   const [quantity, setQuantity] = useState(1);
   const [months, setMonths] = useState(1);
   const [loading, setLoading] = useState(true);
+  const activeSubs = subs.filter((sub) => sub.is_active);
+  const monthlyValue = activeSubs.reduce((sum, sub) => sum + Number(sub.total_price || 0), 0);
 
   const load = () => {
     setLoading(true);
@@ -43,23 +45,40 @@ function Subscriptions() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="app-shell">
       <Navbar />
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Subscriptions</h1>
+      <main className="app-section max-w-6xl pb-16">
+        <div className="section-card mb-6 p-8">
+          <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Subscriptions</div>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Manage recurring dairy plans in one place</h1>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500">
+            This screen keeps the same API behavior but gives customers a clearer workflow and better status overview.
+          </p>
+        </div>
 
-        <div className="rounded-xl border bg-white p-4 mb-6">
-          <div className="font-semibold mb-3">New subscription</div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              className="border rounded px-3 py-2"
-            >
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+          <div className="stat-card">
+            <div className="text-sm text-slate-500">Active plans</div>
+            <div className="mt-2 text-3xl font-semibold">{activeSubs.length}</div>
+          </div>
+          <div className="stat-card">
+            <div className="text-sm text-slate-500">Catalog items</div>
+            <div className="mt-2 text-3xl font-semibold">{products.length}</div>
+          </div>
+          <div className="stat-card">
+            <div className="text-sm text-slate-500">Projected plan value</div>
+            <div className="mt-2 text-3xl font-semibold">Rs. {monthlyValue.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div className="section-card mb-6 p-6">
+          <div className="mb-4 text-lg font-semibold">Create a new subscription</div>
+          <div className="grid gap-3 md:grid-cols-[1.5fr_0.6fr_0.7fr_auto]">
+            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="input-shell">
               <option value="">Select product</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} — ₹ {p.price}
+                  {p.name} - Rs. {p.price}
                 </option>
               ))}
             </select>
@@ -68,57 +87,57 @@ function Subscriptions() {
               min={1}
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value || "1", 10))}
-              className="border rounded px-3 py-2 w-32"
+              className="input-shell"
             />
             <input
               type="number"
               min={1}
               value={months}
               onChange={(e) => setMonths(parseInt(e.target.value || "1", 10))}
-              className="border rounded px-3 py-2 w-36"
+              className="input-shell"
               placeholder="Months"
               title="Number of months"
             />
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              onClick={createSub}
-            >
-              Create
+            <button className="btn-primary" onClick={createSub}>
+              Create plan
             </button>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-gray-500">Loading...</div>
+          <div className="section-card p-10 text-slate-500">Loading subscriptions...</div>
         ) : subs.length === 0 ? (
-          <div className="text-gray-500">No subscriptions</div>
+          <div className="section-card p-10 text-slate-500">No subscriptions yet.</div>
         ) : (
           <div className="space-y-4">
             {subs.map((s) => (
-              <div key={s.id} className="rounded-xl border bg-white p-4 flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">#{s.id}</div>
-                  <div className="text-sm text-gray-600">Qty: {s.quantity}</div>
-                  {"months" in s ? (
-                    <div className="text-sm text-gray-600">Months: {s.months} • Total: ₹ {s.total_price}</div>
-                  ) : null}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      s.is_active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {s.is_active ? "Active" : "Inactive"}
-                  </span>
-                  {s.is_active ? (
-                    <button
-                      className="px-3 py-2 rounded border hover:bg-gray-50"
-                      onClick={() => cancelSub(s.id)}
+              <div key={s.id} className="section-card p-5">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="font-semibold">Subscription #{s.id}</div>
+                    <div className="mt-1 text-sm text-slate-500">Quantity: {s.quantity}</div>
+                    <div className="mt-1 text-sm text-slate-500">Status: {s.is_active ? "Currently running" : "Stopped"}</div>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    {"months" in s ? (
+                      <div className="rounded-2xl bg-[rgba(31,111,67,0.08)] px-4 py-3 text-sm text-slate-600">
+                        <div>Months: {s.months}</div>
+                        <div>Total: Rs. {Number(s.total_price || 0).toFixed(2)}</div>
+                      </div>
+                    ) : null}
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
+                        s.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-700"
+                      }`}
                     >
-                      Cancel
-                    </button>
-                  ) : null}
+                      {s.is_active ? "Active" : "Inactive"}
+                    </span>
+                    {s.is_active ? (
+                      <button className="btn-secondary" onClick={() => cancelSub(s.id)}>
+                        Cancel
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             ))}

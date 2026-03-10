@@ -1,3 +1,85 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-cream: #f7f3ea;
+    --bg-soft: #fffdf8;
+    --surface: rgba(255, 255, 255, 0.82);
+    --surface-strong: #ffffff;
+    --brand: #1f6f43;
+    --brand-deep: #174f31;
+    --brand-accent: #d9a441;
+    --text-main: #1b1f18;
+    --text-soft: #5d665a;
+    --line: rgba(43, 62, 47, 0.12);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen antialiased;
+    color: var(--text-main);
+    background:
+      radial-gradient(circle at top left, rgba(217, 164, 65, 0.18), transparent 24rem),
+      radial-gradient(circle at top right, rgba(31, 111, 67, 0.1), transparent 28rem),
+      linear-gradient(180deg, var(--bg-soft), var(--bg-cream));
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen;
+  }
+
+  .app-section {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .glass-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    @apply rounded-[28px] shadow-[0_18px_60px_rgba(34,47,39,0.08)] backdrop-blur;
+  }
+
+  .section-card {
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    @apply rounded-3xl shadow-[0_12px_40px_rgba(34,47,39,0.08)];
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-white transition hover:scale-[1.01] hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.74);
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition hover:bg-white;
+  }
+
+  .stat-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,251,243,0.92));
+    border: 1px solid var(--line);
+    @apply rounded-[24px] p-5 shadow-[0_10px_30px_rgba(34,47,39,0.07)];
+  }
+
+  .input-shell {
+    border: 1px solid rgba(31, 111, 67, 0.16);
+    background: rgba(255, 255, 255, 0.94);
+    @apply rounded-2xl px-4 py-3 outline-none transition focus:border-[var(--brand)] focus:ring-2 focus:ring-[rgba(31,111,67,0.12)];
+  }
+
+  .page-title {
+    @apply text-3xl font-semibold tracking-tight md:text-4xl;
+  }
+
+  .page-copy {
+    color: var(--text-soft);
+    @apply text-sm leading-7 md:text-base;
+  }
+}
