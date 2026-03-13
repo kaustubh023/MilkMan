@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { useAuth } from "./AuthContext";
-
-const CartContext = createContext(null);
+import { useAuth } from "./useAuth";
+import { CartContext } from "./CartContextValue";
 
 function normalizeProduct(product) {
   if (!product) return null;
@@ -131,7 +130,7 @@ export function CartProvider({ children }) {
       }
     };
 
-    syncCart();
+    void syncCart();
     return () => {
       ignore = true;
     };
@@ -154,7 +153,9 @@ export function CartProvider({ children }) {
     if (isAuthenticated && role === "CUSTOMER") {
       try {
         await api.post("cart/add/", { product: product.id, quantity: nextQuantity });
-      } catch {}
+      } catch {
+        return null;
+      }
     }
   };
 
@@ -163,7 +164,9 @@ export function CartProvider({ children }) {
     if (isAuthenticated && role === "CUSTOMER") {
       try {
         await api.delete("cart/remove/", { data: { product: productId, quantity: 1 } });
-      } catch {}
+      } catch {
+        return null;
+      }
     }
   };
 
@@ -181,7 +184,9 @@ export function CartProvider({ children }) {
     if (isAuthenticated && role === "CUSTOMER") {
       try {
         await api.patch("cart/update_item/", { product: productId, quantity: nextQuantity });
-      } catch {}
+      } catch {
+        return null;
+      }
     }
   };
 
@@ -190,7 +195,9 @@ export function CartProvider({ children }) {
     if (isAuthenticated && role === "CUSTOMER") {
       try {
         await api.delete("cart/clear/");
-      } catch {}
+      } catch {
+        return null;
+      }
     }
   };
 
@@ -216,26 +223,17 @@ export function CartProvider({ children }) {
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = items.reduce((sum, item) => sum + Number(item.product.price || 0) * item.quantity, 0);
 
-  const value = useMemo(
-    () => ({
-      items,
-      cartCount,
-      cartTotal,
-      syncing,
-      addToCart,
-      removeFromCart,
-      updateQuantity,
-      clearCart,
-      checkout,
-    }),
-    [items, cartCount, cartTotal, syncing]
-  );
+  const value = {
+    items,
+    cartCount,
+    cartTotal,
+    syncing,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    checkout,
+  };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
-}
-
-export function useCart() {
-  const context = useContext(CartContext);
-  if (!context) throw new Error("useCart must be used within CartProvider");
-  return context;
 }

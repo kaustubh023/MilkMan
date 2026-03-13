@@ -22,7 +22,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         read_only_fields = ['start_date', 'end_date', 'total_price']
 
     def get_total_price(self, obj):
-        return obj.months * 1000
+        return obj.months * obj.quantity * obj.product.price
 
     def create(self, validated_data):
         # Compute end_date as 30 * months days after start_date

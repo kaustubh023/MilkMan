@@ -1,6 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/useAuth";
+import { useCart } from "../context/useCart";
 
 function Navbar() {
   const { isAuthenticated, role, loading, logout } = useAuth();
@@ -56,6 +56,11 @@ function Navbar() {
             {isAuthenticated && role === "STAFF" ? (
               <NavLink to="/staff/profile" className={navLinkClass}>
                 Staff Profile
+              </NavLink>
+            ) : null}
+            {isAuthenticated && role === "ADMIN" ? (
+              <NavLink to="/admin/dashboard" className={navLinkClass}>
+                Admin
               </NavLink>
             ) : null}
           </nav>

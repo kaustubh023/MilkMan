@@ -33,7 +33,7 @@ function AdminProducts() {
   };
 
   useEffect(() => {
-    load();
+    Promise.resolve().then(load);
   }, []);
 
   const createCategory = async () => {
@@ -193,7 +193,7 @@ function AdminProducts() {
               <div>
                 <div className="font-semibold">{p.name}</div>
                 <div className="text-sm text-gray-600">
-                  ₹ {p.price} • Stock {p.stock} • {p.is_active ? "Active" : "Inactive"}
+                  Rs. {p.price} | Stock {p.stock} | {p.is_active ? "Active" : "Inactive"}
                 </div>
               </div>
               <div className="flex items-center gap-2">

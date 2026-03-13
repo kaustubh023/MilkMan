@@ -1,42 +1,75 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { AuthContext } from "./AuthContextValue";
 
-const AuthContext = createContext(null);
+function clearStoredAuth() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+}
+
+function decodeToken(token) {
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(
+      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+    );
+    const now = Math.floor(Date.now() / 1000);
+
+    if (!payload.exp || payload.exp <= now) {
+      return null;
+    }
+
+    return { id: payload.id, email: payload.email, role: payload.role };
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => decodeToken(localStorage.getItem("access_token")));
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem("access_token")));
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
+    const decodedUser = decodeToken(token);
+
     if (!token) {
-      setLoading(false);
       return;
     }
-    try {
-      const payload = JSON.parse(
-        atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
-      );
-      const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp > now) {
-        setUser({ id: payload.id, email: payload.email, role: payload.role });
-        api
-          .get("auth/me/")
-          .then((res) => setUser(res.data))
-          .catch(() => {})
-          .finally(() => setLoading(false));
-      } else {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        setLoading(false);
-      }
-    } catch {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      setLoading(false);
+
+    if (!decodedUser) {
+      clearStoredAuth();
+      Promise.resolve().then(() => setLoading(false));
+      return;
     }
+
+    let ignore = false;
+
+    api
+      .get("auth/me/")
+      .then((res) => {
+        if (!ignore) {
+          setUser(res.data);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          clearStoredAuth();
+          setUser(null);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -44,49 +77,48 @@ export function AuthProvider({ children }) {
     const { access, refresh } = res.data;
     localStorage.setItem("access_token", access);
     localStorage.setItem("refresh_token", refresh);
-    const payload = JSON.parse(
-      atob(access.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
-    );
-    setUser({ id: payload.id, email: payload.email, role: payload.role });
+
+    const payload = decodeToken(access);
     let redirect = localStorage.getItem("redirectTo");
     localStorage.removeItem("redirectTo");
-    if (!redirect) {
-      if (payload.role === "ADMIN") redirect = "/admin/dashboard";
-      else if (payload.role === "STAFF") redirect = "/staff/profile";
-      else redirect = "/";
+    let resolvedUser = payload;
+
+    if (payload) {
+      setUser(payload);
     }
+
     try {
       const me = await api.get("auth/me/");
       setUser(me.data);
-    } catch {}
+      resolvedUser = me.data;
+    } catch {
+      // Keep decoded token data if the profile refresh fails.
+    }
+
+    if (!redirect) {
+      if (resolvedUser?.role === "ADMIN") redirect = "/admin/dashboard";
+      else if (resolvedUser?.role === "STAFF") redirect = "/staff/profile";
+      else redirect = "/";
+    }
+
     navigate(redirect);
   };
 
   const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    clearStoredAuth();
     setUser(null);
     navigate("/login");
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      role: user?.role ?? null,
-      isAuthenticated: !!user,
-      login,
-      logout,
-      setUser,
-      loading,
-    }),
-    [user, loading]
-  );
+  const value = {
+    user,
+    role: user?.role ?? null,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    setUser,
+    loading,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
 }

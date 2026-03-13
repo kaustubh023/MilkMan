@@ -27,7 +27,7 @@ function Subscriptions() {
   };
 
   useEffect(() => {
-    load();
+    Promise.resolve().then(load);
   }, []);
 
   const createSub = async () => {

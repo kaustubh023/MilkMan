@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Navbar from "../../layout/Navbar";
-import { useCart } from "../../context/CartContext";
+import { useCart } from "../../context/useCart";
 
 function Checkout() {
   const { items, cartTotal, checkout } = useCart();

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import ProductImage from "./ProductImage";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 
 function ProductCard({ product, onClick }) {
   const navigate = useNavigate();

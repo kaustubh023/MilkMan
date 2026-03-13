@@ -26,6 +26,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True)
+    queryset = Product.objects.none()
     serializer_class = ProductSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated and self.request.user.role == 'ADMIN':
+            return Product.objects.all().order_by('-created_at')
+        return Product.objects.filter(is_active=True).order_by('-created_at')

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Navbar from "../../layout/Navbar";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import api from "../../api/axios";
 
 function Profile() {

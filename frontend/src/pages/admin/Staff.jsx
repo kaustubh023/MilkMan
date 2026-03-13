@@ -5,6 +5,9 @@ import AdminLayout from "../../layouts/AdminLayout";
 function AdminStaff() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [form, setForm] = useState({
     id: null,
     email: "",
@@ -19,35 +22,72 @@ function AdminStaff() {
     api
       .get("auth/staff/")
       .then((res) => setStaff(res.data))
-      .catch(() => setStaff([]))
+      .catch(() => {
+        setStaff([]);
+        setError("Unable to load staff right now.");
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    load();
+    Promise.resolve().then(load);
   }, []);
 
   const resetForm = () =>
     setForm({ id: null, email: "", full_name: "", phone: "", password: "", is_active: true });
 
   const saveStaff = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!form.email.trim() || !form.full_name.trim()) {
+      setError("Email and full name are required.");
+      return;
+    }
+
+    if (!form.id && !form.password.trim()) {
+      setError("Password is required when creating a new staff member.");
+      return;
+    }
+
     const payload = {
-      email: form.email,
-      full_name: form.full_name,
-      phone: form.phone || null,
+      email: form.email.trim(),
+      full_name: form.full_name.trim(),
+      phone: form.phone.trim() || null,
       is_active: form.is_active,
     };
-    if (form.password) payload.password = form.password;
-    if (form.id) {
-      await api.put(`auth/staff/${form.id}/`, payload);
-    } else {
-      await api.post("auth/staff/", payload);
+    if (form.password.trim()) payload.password = form.password.trim();
+
+    setSaving(true);
+    try {
+      if (form.id) {
+        await api.put(`auth/staff/${form.id}/`, payload);
+        setSuccess("Staff member updated successfully.");
+      } else {
+        await api.post("auth/staff/", payload);
+        setSuccess("Staff member created successfully.");
+      }
+      resetForm();
+      load();
+    } catch (err) {
+      const apiError = err?.response?.data;
+      if (apiError?.email?.[0]) {
+        setError(`Email: ${apiError.email[0]}`);
+      } else if (apiError?.password?.[0]) {
+        setError(`Password: ${apiError.password[0]}`);
+      } else if (typeof apiError?.detail === "string") {
+        setError(apiError.detail);
+      } else {
+        setError("Unable to save staff member.");
+      }
+    } finally {
+      setSaving(false);
     }
-    resetForm();
-    load();
   };
 
   const editStaff = (s) => {
+    setError("");
+    setSuccess("");
     setForm({
       id: s.id,
       email: s.email,
@@ -59,18 +99,32 @@ function AdminStaff() {
   };
 
   const toggleActive = async (s) => {
-    await api.put(`auth/staff/${s.id}/`, {
-      email: s.email,
-      full_name: s.full_name,
-      phone: s.phone,
-      is_active: !s.is_active,
-    });
-    load();
+    setError("");
+    setSuccess("");
+    try {
+      await api.put(`auth/staff/${s.id}/`, {
+        email: s.email,
+        full_name: s.full_name,
+        phone: s.phone,
+        is_active: !s.is_active,
+      });
+      setSuccess("Staff status updated successfully.");
+      load();
+    } catch {
+      setError("Unable to update staff status.");
+    }
   };
 
   const delStaff = async (id) => {
-    await api.delete(`auth/staff/${id}/`);
-    load();
+    setError("");
+    setSuccess("");
+    try {
+      await api.delete(`auth/staff/${id}/`);
+      setSuccess("Staff member deleted successfully.");
+      load();
+    } catch {
+      setError("Unable to delete staff member.");
+    }
   };
 
   return (
@@ -79,6 +133,8 @@ function AdminStaff() {
 
       <div className="rounded-xl border bg-white p-4 mb-6">
         <div className="font-semibold mb-3">{form.id ? "Edit staff" : "Create staff"}</div>
+        {error ? <div className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div> : null}
+        {success ? <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div> : null}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-3">
           <input
             className="border rounded px-3 py-2"
@@ -114,11 +170,22 @@ function AdminStaff() {
             Active
           </label>
           <div className="flex gap-2">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={saveStaff}>
-              {form.id ? "Update" : "Create"}
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
+              onClick={saveStaff}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : form.id ? "Update" : "Create"}
             </button>
             {form.id ? (
-              <button className="border px-4 py-2 rounded" onClick={resetForm}>
+              <button
+                className="border px-4 py-2 rounded"
+                onClick={() => {
+                  setError("");
+                  setSuccess("");
+                  resetForm();
+                }}
+              >
                 Cancel
               </button>
             ) : null}
@@ -168,4 +235,3 @@ function AdminStaff() {
 }
 
 export default AdminStaff;
-

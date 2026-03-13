@@ -20,7 +20,7 @@ function Signup() {
         password,
       });
       navigate("/login");
-    } catch (e) {
+    } catch {
       alert("Signup failed");
     } finally {
       setLoading(false);
@@ -72,4 +72,3 @@ function Signup() {
 }
 
 export default Signup;
-

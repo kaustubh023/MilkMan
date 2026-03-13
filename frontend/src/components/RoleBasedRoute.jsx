@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 function RoleBasedRoute({ children, roles }) {
   const { role } = useAuth();
@@ -8,4 +8,3 @@ function RoleBasedRoute({ children, roles }) {
 }
 
 export default RoleBasedRoute;
-

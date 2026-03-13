@@ -16,7 +16,7 @@ function AdminOrders() {
   };
 
   useEffect(() => {
-    load();
+    Promise.resolve().then(load);
   }, []);
 
   const updateStatus = async (id, status) => {
@@ -42,14 +42,14 @@ function AdminOrders() {
                     o.status === "DELIVERED"
                       ? "bg-green-100 text-green-700"
                       : o.status === "CANCELLED"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-yellow-100 text-yellow-700"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-yellow-100 text-yellow-700"
                   }`}
                 >
                   {o.status}
                 </span>
               </div>
-              <div className="mt-2 text-sm text-gray-600">Total: ₹ {o.total_amount}</div>
+              <div className="mt-2 text-sm text-gray-600">Total: Rs. {o.total_amount}</div>
               <div className="mt-3 flex items-center gap-2">
                 <button className="border px-3 py-2 rounded" onClick={() => updateStatus(o.id, "PENDING")}>
                   Mark Pending
@@ -70,4 +70,3 @@ function AdminOrders() {
 }
 
 export default AdminOrders;
-

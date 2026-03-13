@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import Navbar from "../../layout/Navbar";
 import ProductCard from "../../components/ProductCard";
+import { useAuth } from "../../context/useAuth";
 
 function Home() {
+  const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const highlights = [
@@ -42,9 +44,15 @@ function Home() {
                 <a href="/products" className="btn-primary">
                   Explore products
                 </a>
-                <a href="/signup" className="btn-secondary">
-                  Create account
-                </a>
+                {isAuthenticated ? (
+                  <a href="/subscriptions" className="btn-secondary">
+                    View plans
+                  </a>
+                ) : (
+                  <a href="/signup" className="btn-secondary">
+                    Create account
+                  </a>
+                )}
               </div>
               <div className="mt-10 grid gap-4 sm:grid-cols-3">
                 <div className="stat-card">
@@ -120,10 +128,10 @@ function Home() {
               </p>
             </div>
             <div className="section-card p-7">
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Operations</div>
-              <h3 className="mt-3 text-2xl font-semibold">Admin visibility</h3>
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">About us</div>
+              <h3 className="mt-3 text-2xl font-semibold">Built for everyday dairy delivery</h3>
               <p className="mt-3 text-sm leading-6 text-slate-500">
-                Stronger dashboards help staff see customer growth, active plans, and revenue trends with less friction.
+                KP Fresh Dairy focuses on fresh household essentials, reliable delivery, and a simple ordering experience for daily use.
               </p>
             </div>
             <div className="section-card p-7">

@@ -16,7 +16,7 @@ function AdminSubscriptions() {
   };
 
   useEffect(() => {
-    load();
+    Promise.resolve().then(load);
   }, []);
 
   const runDaily = async () => {
@@ -44,7 +44,7 @@ function AdminSubscriptions() {
                 <div className="font-semibold">Subscription #{s.id}</div>
                 <div className="text-sm text-gray-600">Qty: {s.quantity}</div>
                 {"months" in s ? (
-                  <div className="text-sm text-gray-600">Months: {s.months} • Total: ₹ {s.total_price}</div>
+                  <div className="text-sm text-gray-600">Months: {s.months} | Total: Rs. {s.total_price}</div>
                 ) : null}
               </div>
               <span
