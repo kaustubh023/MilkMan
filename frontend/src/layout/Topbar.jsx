@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/useTheme";
 
 function Topbar() {
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -16,9 +18,14 @@ function Topbar() {
           <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Operations</div>
           <h1 className="mt-1 text-xl font-semibold tracking-tight">Dashboard</h1>
         </div>
-        <button onClick={handleLogout} className="btn-secondary">
-          Logout
-        </button>
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={toggleTheme} className="theme-toggle" aria-label="Toggle theme">
+            {isDark ? "Light" : "Dark"}
+          </button>
+          <button onClick={handleLogout} className="btn-secondary">
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -82,22 +82,30 @@ function Subscriptions() {
                 </option>
               ))}
             </select>
-            <input
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value || "1", 10))}
-              className="input-shell"
-            />
-            <input
-              type="number"
-              min={1}
-              value={months}
-              onChange={(e) => setMonths(parseInt(e.target.value || "1", 10))}
-              className="input-shell"
-              placeholder="Months"
-              title="Number of months"
-            />
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+              Quantity
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value || "1", 10))}
+                className="input-shell"
+                placeholder="Enter quantity"
+                title="Quantity"
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+              Months
+              <input
+                type="number"
+                min={1}
+                value={months}
+                onChange={(e) => setMonths(parseInt(e.target.value || "1", 10))}
+                className="input-shell"
+                placeholder="Enter months"
+                title="Number of months"
+              />
+            </label>
             <button className="btn-primary" onClick={createSub}>
               Create plan
             </button>

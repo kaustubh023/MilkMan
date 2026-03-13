@@ -1,10 +1,12 @@
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useCart } from "../context/useCart";
+import { useTheme } from "../context/useTheme";
 
 function Navbar() {
   const { isAuthenticated, role, loading, logout } = useAuth();
   const { cartCount } = useCart();
+  const { isDark, toggleTheme } = useTheme();
   const showCart = !isAuthenticated || role === "CUSTOMER";
 
   const navLinkClass = ({ isActive }) =>
@@ -66,6 +68,9 @@ function Navbar() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <button type="button" onClick={toggleTheme} className="theme-toggle" aria-label="Toggle theme">
+              {isDark ? "Light" : "Dark"}
+            </button>
             {showCart ? (
               <Link to="/cart" className="relative inline-flex items-center rounded-full border border-[var(--line)] bg-white/70 px-4 py-3 text-sm font-semibold transition hover:bg-white">
                 Cart
