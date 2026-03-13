@@ -177,3 +177,4 @@ npm.cmd run build
 - `frontend/src/App.jsx`
 - `frontend/src/context/AuthContext.jsx`
 - `frontend/src/pages/admin/`
+CI/CD test deployment
